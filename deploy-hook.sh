@@ -18,6 +18,15 @@ cp -L "$RENEWED_LINEAGE/chain.pem" "/etc/letsencrypt/certs/"
 # Set proper permissions
 chmod 644 /etc/letsencrypt/certs/*.pem
 
+# Execute host script if it exists and is executable
+if [ -f "/host-scripts/post-certbot-renewal.sh" ] && [ -x "/host-scripts/post-certbot-renewal.sh" ]; then
+    echo "Executing host post-certbot-renewal script..."
+    /host-scripts/post-certbot-renewal.sh
+    echo "Host post-certbot-renewal script executed with exit code: $?"
+else
+    echo "No executable host post-certbot-renewal script found at /host-scripts/post-certbot-renewal.sh"
+fi
+
 # Add custom actions here if needed
 # For example: restart web server, send notification, etc.
 

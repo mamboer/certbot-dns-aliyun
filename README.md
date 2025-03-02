@@ -54,8 +54,8 @@ ACCESS_KEY_ID=your-access-key-id
 ACCESS_KEY_SECRET=your-access-key-secret
 DOMAINS=example.com,sub.example.com
 EMAIL=your-email@example.com
-# 可选，默认为 "0 0 * * *"
-CRON_SCHEDULE=0 0 * * *
+# 可选，默认为 "0 0 * * 1,4"
+CRON_SCHEDULE=0 0 * * 1,4
 ```
 
 2. 运行 Docker 容器：
@@ -83,7 +83,7 @@ docker run -d \
 
 | 环境变量 | 默认值 | 说明 |
 |----------|--------|------|
-| CRON_SCHEDULE | 0 0 * * * | 证书自动续期的 cron 表达式（默认每天 0 点） |
+| CRON_SCHEDULE | 0 0 * * 1,4 | 证书自动续期的 cron 表达式（默认每周1和4的 0 点） |
 
 ## 证书文件
 
@@ -95,6 +95,45 @@ docker run -d \
 - `chain.pem` - 中间证书
 
 通过挂载卷，可以在主机上访问这些文件。
+
+## 证书续期后执行宿主机脚本
+
+您可以配置容器在证书续期成功后执行宿主机上的脚本（例如重启 Nginx）：
+
+1. 在宿主机上创建一个脚本文件，例如 `post-certbot-renewal.sh`：
+
+```bash
+#!/bin/bash
+# 这个脚本将在证书续期成功后执行
+
+echo "证书已更新，正在重启 Nginx..."
+systemctl restart nginx
+# 或者其他您需要的命令
+echo "Nginx 已重启"
+```
+
+2. 确保脚本具有执行权限：
+
+```bash
+chmod +x /path/to/post-certbot-renewal.sh
+```
+
+3. 启动容器时挂载这个脚本：
+
+```bash
+docker run -d \
+  -e REGION="cn-hangzhou" \
+  -e ACCESS_KEY_ID="your-access-key-id" \
+  -e ACCESS_KEY_SECRET="your-access-key-secret" \
+  -e DOMAINS="example.com,sub.example.com" \
+  -e EMAIL="your-email@example.com" \
+  -v /path/to/certificates:/etc/letsencrypt/certs \
+  -v /path/to/post-certbot-renewal.sh:/host-scripts/post-certbot-renewal.sh \
+  --name certbot-dns-aliyun \
+  certbot-dns-aliyun
+```
+
+容器会在证书成功续期后自动执行这个脚本。
 
 ## 域名处理逻辑
 

@@ -35,10 +35,13 @@ ENV ACCESS_KEY_SECRET=""
 # Domains separated by comma (e.g. example.com,test.domain.com)
 ENV DOMAINS=""
 ENV EMAIL=""
-ENV CRON_SCHEDULE="0 0 * * *"
+ENV CRON_SCHEDULE="0 0 * * 1,4"
 
 # Note: All the above environment variables can also be provided via a .env file
 # mounted at /.env in the container. Command line environment variables take precedence.
+
+# Create directory for host scripts
+RUN mkdir -p /host-scripts
 
 # Setup cron job for certbot renew
 RUN echo "$CRON_SCHEDULE /usr/local/bin/entrypoint.sh renew" > /etc/crontabs/root
