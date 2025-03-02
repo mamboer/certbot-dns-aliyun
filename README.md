@@ -1,101 +1,158 @@
-# certbot-dns-aliyun
+# Certbot DNS Aliyun
 
-> 解决阿里云 DNS 不能自动为通配符证书续期的问题
+一个基于 Docker 的自动化解决方案，通过 Let's Encrypt 获取和管理 SSL/TLS 证书，使用阿里云 DNS 进行域名验证。
 
-## 原理
+注：项目基于 [justjavac](https://github.com/justjavac) 的同名项目 [certbot-dns-aliyun](https://github.com/justjavac/certbot-dns-aliyun) 迭代开发。
 
-当我们使用 certbot 申请**通配符**证书时，需要手动添加 TXT 记录。每个 certbot 申请的证书有效期为 3 个月，虽然 certbot 提供了自动续期命令，但是当我们把自动续期命令配置为定时任务时，我们无法手动添加新的 TXT 记录用于 certbot 验证。
+## 功能特点
 
-好在 certbot 提供了一个 hook，可以编写一个 Shell 脚本。在续期的时候让脚本调用 DNS 服务商的 API 接口动态添加 TXT 记录，验证完成后再删除此记录。
+- 使用 Let's Encrypt 自动获取免费 SSL/TLS 证书
+- 通过阿里云 DNS API 自动完成 DNS-01 验证挑战
+- 支持多域名证书申请和管理
+- 自动为顶级域名添加通配符证书（例如：*.example.com）
+- 使用 cron 任务自动定期续期证书
+- 支持通过 .env 文件简化配置
+- 证书自动部署到指定目录
 
-## 安装(CommandLine)
+## 快速开始
 
-1. 安装 aliyun cli 工具
+### 安装
 
-   ```shell
-   wget https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
-   tar xzvf aliyun-cli-linux-latest-amd64.tgz
-   sudo cp aliyun /usr/local/bin
-   rm aliyun
-   ```
+1. 克隆项目仓库：
+```bash
+git clone https://github.com/mamboer/certbot-dns-aliyun.git
+cd certbot-dns-aliyun
+```
 
-   安装完成后需要配置[凭证信息](https://help.aliyun.com/document_detail/110341.html)
+2. 构建 Docker 镜像：
+```bash
+docker build -t certbot-dns-aliyun .
+```
 
-2. 安装 certbot-dns-aliyun 插件
+### 使用方法
 
-   ```shell
-   wget https://cdn.jsdelivr.net/gh/justjavac/certbot-dns-aliyun@main/alidns.sh
-   sudo cp alidns.sh /usr/local/bin
-   sudo chmod +x /usr/local/bin/alidns.sh
-   sudo ln -s /usr/local/bin/alidns.sh /usr/local/bin/alidns
-   rm alidns.sh
-   ```
+#### 方法一：使用环境变量
 
-3. 申请证书
+```bash
+docker run -d \
+  -e REGION="cn-hangzhou" \
+  -e ACCESS_KEY_ID="your-access-key-id" \
+  -e ACCESS_KEY_SECRET="your-access-key-secret" \
+  -e DOMAINS="example.com,sub.example.com" \
+  -e EMAIL="your-email@example.com" \
+  -v /path/to/certificates:/etc/letsencrypt/certs \
+  --name certbot-dns-aliyun \
+  certbot-dns-aliyun
+```
 
-   测试是否能正确申请：
+#### 方法二：使用 .env 文件（推荐）
 
-   ```sh
-   certbot certonly -d *.example.com --manual --preferred-challenges dns --manual-auth-hook "alidns" --manual-cleanup-hook "alidns clean" --dry-run
-   ```
+1. 创建 .env 文件：
+```
+REGION=cn-hangzhou
+ACCESS_KEY_ID=your-access-key-id
+ACCESS_KEY_SECRET=your-access-key-secret
+DOMAINS=example.com,sub.example.com
+EMAIL=your-email@example.com
+# 可选，默认为 "0 0 * * *"
+CRON_SCHEDULE=0 0 * * *
+```
 
-   正式申请时去掉 `--dry-run` 参数：
+2. 运行 Docker 容器：
+```bash
+docker run -d \
+  -v /path/to/.env:/.env \
+  -v /path/to/certificates:/etc/letsencrypt/certs \
+  --name certbot-dns-aliyun \
+  certbot-dns-aliyun
+```
 
-   ```sh
-   certbot certonly -d *.example.com --manual --preferred-challenges dns --manual-auth-hook "alidns" --manual-cleanup-hook "alidns clean"
-   ```
+## 配置选项
 
-4. 证书续期
+### 必选环境变量
 
-   ```sh
-   certbot renew --manual --preferred-challenges dns --manual-auth-hook "alidns" --manual-cleanup-hook "alidns clean" --dry-run
-   ```
+| 环境变量 | 说明 |
+|----------|------|
+| REGION | 阿里云区域，例如：cn-hangzhou |
+| ACCESS_KEY_ID | 阿里云访问密钥ID |
+| ACCESS_KEY_SECRET | 阿里云访问密钥密钥 |
+| DOMAINS | 要获取证书的域名列表，使用逗号分隔 |
+| EMAIL | 证书所有者的电子邮件地址 |
 
-   如果以上命令没有错误，把 `--dry-run` 参数去掉。
+### 可选环境变量
 
-5. 自动续期
+| 环境变量 | 默认值 | 说明 |
+|----------|--------|------|
+| CRON_SCHEDULE | 0 0 * * * | 证书自动续期的 cron 表达式（默认每天 0 点） |
 
-   添加定时任务 crontab。
+## 证书文件
 
-   ```sh
-   crontab -e
-   ```
+证书会自动保存在容器内的 `/etc/letsencrypt/certs/` 目录中：
 
-   输入
+- `fullchain.pem` - 包含服务器证书和中间证书
+- `privkey.pem` - 证书私钥
+- `cert.pem` - 服务器证书
+- `chain.pem` - 中间证书
 
-   ```txt
-   1 1 */1 * * root certbot renew --manual --preferred-challenges dns --manual-auth-hook "alidns" --manual-cleanup-hook "alidns clean" --deploy-hook "nginx -s reload"
-   ```
+通过挂载卷，可以在主机上访问这些文件。
 
-   上面脚本中的 `--deploy-hook "nginx -s reload"` 表示在续期成功后自动重启 nginx。
-   
-## 安装（Dockerfile）
+## 域名处理逻辑
 
-   下载Dockerfile以及entrypoint.sh,确保他们在同一文件夹下。目前Dockerfile中默认下载amd64版本，其他架构请修改对应的Aliyun CLI URL。
-   
-1. 创建Image
-   
-   进入Dockerfile同目录:
-   ```sh
-   docker build -t certbot-alicli .
-   ```
+- 对于顶级域名（如 example.com），会自动添加通配符证书（*.example.com）
+- 对于子域名（如 sub.example.com），只获取该特定子域名的证书
+- 多个域名使用逗号分隔，例如：`example.com,sub.example.com,another.com`
 
-   使用代理（可选）:
-   ```sh
-   docker build . \
-    --build-arg "HTTP_PROXY=http://127.0.0.1:7890" \
-    --build-arg "HTTPS_PROXY=http://127.0.0.1:7890" \
-    -t certbot-alicli
-   ```
-3. 运行容器
-   ```sh
-   docker run \
-   -e REGION=YOUR_REGEION \
-   -e ACCESS_KEY_ID=YOUR_ACCESS_KEY \
-   -e ACCESS_KEY_SECRET=YOUR_ACCESS_SECRET \
-   -e DOMAIN=YOUR_DOMAIN \
-   -e EMAIL=YOUR_NOTIFICATION_EMAIL \   // 证书刷新通知邮箱
-   -e CRON_SCHEDULE="0 0 * * *" \   // 自定义证书刷新间隔
-   -v /path/letsencrypt:/etc/letsencrypt \ // 将容器内的证书路径完整映射到宿主机
-   -d certbot-alicli
-   ```
+## 手动续期
+
+如果需要手动续期证书，可以执行：
+
+```bash
+docker exec certbot-dns-aliyun /usr/local/bin/entrypoint.sh renew
+```
+
+## 安全提示
+
+- 使用具有最小权限的阿里云访问密钥（只需要DNS修改权限）
+- 避免将密钥直接硬编码在 Dockerfile 或命令行中
+- 推荐使用 .env 文件或 Docker 密钥管理功能
+
+## 故障排除
+
+- 检查阿里云 DNS API 权限
+- 查看容器日志了解详细错误信息：`docker logs certbot-dns-aliyun`
+- 确保域名已在阿里云 DNS 服务中正确配置
+
+## 自动化构建
+
+本项目配置了 GitHub Actions 工作流，可以在代码提交到 main 分支时自动构建 Docker 镜像并推送到：
+
+1. Docker Hub: `[你的 DockerHub 用户名]/certbot-dns-aliyun`
+2. 阿里云容器镜像服务: `[你的阿里云容器镜像注册地址]/[你的容器镜像服务命名空间]/certbot-dns-aliyun`
+
+### 配置自动化构建
+
+要启用自动化构建，请在 GitHub 仓库的 Settings -> Secrets and variables -> Actions 中添加以下密钥：
+
+| 密钥名称 | 说明 |
+|----------|------|
+| DOCKERHUB_USERNAME | Docker Hub 用户名 |
+| DOCKERHUB_TOKEN | Docker Hub 访问令牌（不是密码） |
+| ALIYUN_CR_USERNAME | 阿里云容器镜像服务用户名 |
+| ALIYUN_CR_PASSWORD | 阿里云容器镜像服务密码或访问令牌 |
+| ALIYUN_CR_NAMESPACE | 阿里云容器镜像服务命名空间 |
+| ALIYUN_CR_URL | 阿里云容器镜像服务注册地址，可到 `控制台/容器镜像服务` 相关页面查找到 |
+
+### 手动触发构建
+
+除了通过提交到 main 分支自动触发外，您还可以在 GitHub 仓库的 Actions 页面手动触发工作流。
+
+### 构建标签
+
+自动构建的镜像会包含以下标签：
+- `latest`: 最新构建
+- 语义化版本号（如有 Git 标签）
+- 短 Git SHA 哈希值
+
+## 许可证
+
+[MIT License](LICENSE)
