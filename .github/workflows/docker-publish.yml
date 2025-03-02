@@ -39,7 +39,7 @@ jobs:
       with:
         images: |
           ${{ vars.DOCKERHUB_USERNAME }}/certbot-dns-aliyun
-          ${{ secrets.ALIYUN_CR_URL }}/${{ secrets.ALIYUN_CR_NAMESPACE }}/certbot-dns-aliyun
+          ${{ secrets.ALIYUN_CR_URL }}/${{ vars.ALIYUN_CR_NAMESPACE }}/certbot-dns-aliyun
         tags: |
           type=raw,value=latest
           type=semver,pattern={{version}}

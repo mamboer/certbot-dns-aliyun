@@ -145,7 +145,6 @@ docker exec certbot-dns-aliyun /usr/local/bin/entrypoint.sh renew
    | DOCKERHUB_TOKEN | Docker Hub 访问令牌（不是密码） |
    | ALIYUN_CR_USERNAME | 阿里云容器镜像服务用户名 |
    | ALIYUN_CR_PASSWORD | 阿里云容器镜像服务密码或访问令牌 |
-   | ALIYUN_CR_NAMESPACE | 阿里云容器镜像服务命名空间 |
    | ALIYUN_CR_URL | 阿里云容器镜像服务注册地址，**格式要求**：不要包含 http:// 或 https:// 前缀，不要以斜杠 / 结尾） |
 
    - 在 `PROD` 环境下添加以下 Variables：
@@ -153,6 +152,7 @@ docker exec certbot-dns-aliyun /usr/local/bin/entrypoint.sh renew
    | 变量名称 | 说明 |
    |----------|------|
    | DOCKERHUB_USERNAME | Docker Hub 用户名 |
+   | ALIYUN_CR_NAMESPACE | 阿里云容器镜像服务命名空间 |
 
 3. 环境保护规则（可选）：
    - 可以为 `PROD` 环境添加保护规则，如需要审批才能部署到该环境
