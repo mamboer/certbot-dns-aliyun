@@ -131,16 +131,31 @@ docker exec certbot-dns-aliyun /usr/local/bin/entrypoint.sh renew
 
 ### 配置自动化构建
 
-要启用自动化构建，请在 GitHub 仓库的 Settings -> Secrets and variables -> Actions 中添加以下密钥：
+要启用自动化构建，需要在 GitHub 仓库中配置环境和密钥：
 
-| 密钥名称 | 说明 |
-|----------|------|
-| DOCKERHUB_USERNAME | Docker Hub 用户名 |
-| DOCKERHUB_TOKEN | Docker Hub 访问令牌（不是密码） |
-| ALIYUN_CR_USERNAME | 阿里云容器镜像服务用户名 |
-| ALIYUN_CR_PASSWORD | 阿里云容器镜像服务密码或访问令牌 |
-| ALIYUN_CR_NAMESPACE | 阿里云容器镜像服务命名空间 |
-| ALIYUN_CR_URL | 阿里云容器镜像服务注册地址，可到 `控制台/容器镜像服务` 相关页面查找到 |
+1. 创建环境：
+   - 进入 GitHub 仓库的 Settings -> Environments
+   - 点击 "New environment" 创建名为 `PROD` 的环境
+
+2. 添加 Secrets 和 Variables：
+   - 在 `PROD` 环境下添加以下 Secrets：
+
+   | 密钥名称 | 说明 |
+   |----------|------|
+   | DOCKERHUB_TOKEN | Docker Hub 访问令牌（不是密码） |
+   | ALIYUN_CR_USERNAME | 阿里云容器镜像服务用户名 |
+   | ALIYUN_CR_PASSWORD | 阿里云容器镜像服务密码或访问令牌 |
+   | ALIYUN_CR_NAMESPACE | 阿里云容器镜像服务命名空间 |
+   | ALIYUN_CR_URL | 阿里云容器镜像服务注册地址，可到 `控制台/容器镜像服务` 相关页面查找到 |
+
+   - 在 `PROD` 环境下添加以下 Variables：
+   
+   | 变量名称 | 说明 |
+   |----------|------|
+   | DOCKERHUB_USERNAME | Docker Hub 用户名 |
+
+3. 环境保护规则（可选）：
+   - 可以为 `PROD` 环境添加保护规则，如需要审批才能部署到该环境
 
 ### 手动触发构建
 

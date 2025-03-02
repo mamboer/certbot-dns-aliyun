@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: PROD  # 指定使用PROD环境
     
     steps:
     - name: Checkout code
@@ -37,7 +38,7 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/certbot-dns-aliyun
+          ${{ vars.DOCKERHUB_USERNAME }}/certbot-dns-aliyun
           ${{ secrets.ALIYUN_CR_URL }}/${{ secrets.ALIYUN_CR_NAMESPACE }}/certbot-dns-aliyun
         tags: |
           type=raw,value=latest
