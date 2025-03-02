@@ -146,7 +146,7 @@ docker exec certbot-dns-aliyun /usr/local/bin/entrypoint.sh renew
    | ALIYUN_CR_USERNAME | 阿里云容器镜像服务用户名 |
    | ALIYUN_CR_PASSWORD | 阿里云容器镜像服务密码或访问令牌 |
    | ALIYUN_CR_NAMESPACE | 阿里云容器镜像服务命名空间 |
-   | ALIYUN_CR_URL | 阿里云容器镜像服务注册地址，可到 `控制台/容器镜像服务` 相关页面查找到 |
+   | ALIYUN_CR_URL | 阿里云容器镜像服务注册地址，**格式要求**：不要包含 http:// 或 https:// 前缀，不要以斜杠 / 结尾） |
 
    - 在 `PROD` 环境下添加以下 Variables：
    
@@ -167,6 +167,23 @@ docker exec certbot-dns-aliyun /usr/local/bin/entrypoint.sh renew
 - `latest`: 最新构建
 - 语义化版本号（如有 Git 标签）
 - 短 Git SHA 哈希值
+
+### 自动构建故障排除
+
+如果您遇到类似 `invalid tag "***//certbot-dns-aliyun:latest": invalid reference format` 的错误，请检查：
+
+1. **阿里云容器镜像服务地址格式**：
+   - 确保 `ALIYUN_CR_URL` 的格式正确，例如 `registry.cn-hangzhou.aliyuncs.com`
+   - 不要包含 `http://` 或 `https://` 前缀
+   - 不要在末尾添加斜杠 `/`
+
+2. **命名空间格式**：
+   - 确保 `ALIYUN_CR_NAMESPACE` 只包含允许的字符（字母、数字、短横线）
+   - 不要在开头或结尾添加斜杠
+
+3. **查看详细日志**：
+   - 在 GitHub Actions 日志中查找更详细的错误信息
+   - 尝试手动构建和推送镜像，验证凭据和配置
 
 ## 许可证
 
